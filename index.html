@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="style.css">
+    <title>Doctor Appointment Booking</title>
+</head>
+
+<body>
+
+    <div class="container">
+        <header class="header">
+            <h1>Doctor Appointment Booking</h1>
+            <nav>
+                <ul>
+                    <li><a href="./index.html">Home</a></li>
+                    <li><a href="#doctors">Doctors</a></li>
+                    <li><a href="#book-appointment">Book Appointment</a></li>
+                    <li><a href="#login">Login</a></li>
+                    <li><a href="#signup">Sign Up</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <div class="img-box">
+            <h2 style="margin-bottom: -30px;"> Patient Details</h2>
+            <form onsubmit="event.preventDefault(); addData();">
+                <input type="text" id="id" placeholder="Enter ID" required>
+                <input type="text" id="pnm" placeholder="Enter Patient Name" required>
+                <input type="number" id="ad" placeholder="Enter Mobile No" required>
+                <input type="datetime-local" id="tm" required>
+
+                <select id="spe" required>
+                    <option value="">Select Specialization</option>
+                    <option value="Cardiologist">Cardiologist</option>
+                    <option value="Neurologist">Neurologist</option>
+                    <option value="Orthopedic">Orthopedic</option>
+                    <option value="Pediatrician">Pediatrician</option>
+                    <option value="Dermatologist">Dermatologist</option>
+                    <option value="ENT Specialist">ENT Specialist</option>
+                    <option value="Gynecologist">Gynecologist</option>
+                    <option value="Psychiatrist">Psychiatrist</option>
+                </select>
+
+                <select id="shd" required>
+                    <option value="">Select Disease</option>
+                    <option value="Diabetes">Diabetes</option>
+                    <option value="Hypertension">Hypertension</option>
+                    <option value="Heart Disease">Heart Disease</option>
+                    <option value="Asthma">Asthma</option>
+                    <option value="Cancer">Cancer</option>
+                    <option value="Arthritis">Arthritis</option>
+                    <option value="Stroke">Stroke</option>
+                    <option value="Chronic Kidney Disease">Chronic Kidney Disease</option>
+                </select>
+
+                <button class="btn" type="submit">Book Now</button>
+            </form>
+        </div>
+
+        <div class="table-box">
+            <h2 id="rp" style="margin-top: -30px;">Report</h2>
+            <table border="1">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Patient Name</th>
+                        <th>Mobile No</th>
+                        <th>Date-Time</th>
+                        <th>Specialization</th>
+                        <th>Health Diseases</th>
+                        <th>Delete</th>
+                        <th>Edit</th>
+                    </tr>
+                </thead>
+                <tbody id="showdata"></tbody>
+            </table>
+        </div>
+
+        <div id="demo"></div>
+    </div>
+
+    <script>
+        async function fet() {
+            try {
+                const res = await fetch("http://localhost:3000/Doctor");
+                if (!res.ok) throw new Error("Error fetching data from server");
+
+                const doctors = await res.json();
+                const tableBody = document.querySelector('#showdata');
+
+                const tableRows = doctors.map((doctor) => `
+                    <tr>
+                        <td>${doctor.id}</td>
+                        <td>${doctor.pt_name}</td>
+                        <td>${doctor.ad}</td>
+                        <td>${doctor.time}</td>
+                        <td>${doctor.sp}</td>
+                        <td>${doctor.sh}</td>
+                        <td><button class="bt" onclick="mydelete(${doctor.id})">Delete</button></td>
+                        <td><button class="bt" onclick="myupdate(${doctor.id})">Edit</button></td>
+                    </tr>
+                `).join("");
+
+                tableBody.innerHTML = tableRows;
+            } catch (error) {
+                alert("Error fetching data: " + error.message);
+            }
+        }
+
+        window.onload = fet;
+
+        async function addData() {
+            const newDoctor = {
+                id: document.getElementById('id').value,
+                pt_name: document.getElementById('pnm').value,
+                ad: document.getElementById('ad').value,
+                time: document.getElementById('tm').value,
+                sp: document.getElementById('spe').value,
+                sh: document.getElementById('shd').value
+            };
+
+            try {
+                const res = await fetch("http://localhost:3000/Doctor", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(newDoctor)
+                });
+
+                if (res.ok) {
+                    alert("Inserted successfully");
+                    fet();
+                } else {
+                    const errorMessage = await res.text();
+                    throw new Error(errorMessage || "Failed to insert data");
+                }
+            } catch (error) {
+                alert("Error inserting data: " + error.message);
+            }
+        }
+
+        async function mydelete(id) {
+            try {
+                const res = await fetch(`http://localhost:3000/Doctor/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (res.ok) {
+                    alert("Deleted successfully");
+                    fet();
+                } else {
+                    const errorMessage = await res.text();
+                    throw new Error(errorMessage || "Failed to delete data");
+                }
+            } catch (error) {
+                alert("Error deleting data: " + error.message);
+            }
+        }
+
+        async function myupdate(id) {
+    try {
+        const res = await fetch(`http://localhost:3000/Doctor/${id}`);
+        if (!res.ok) throw new Error("Error fetching doctor data for update");
+
+        const doctor = await res.json();
+        document.getElementById('demo').innerHTML = `
+            <input type="text" value="${doctor.id}" id="id1" readonly>
+            <input type="text" value="${doctor.pt_name}" id="name1">
+            <input type="text" value="${doctor.ad}" id="ad1">
+            <input type="datetime-local" value="${doctor.time}" id="time1">
+            <select id="sp1" required>
+                <option value="Cardiologist" ${doctor.sp === 'Cardiologist' ? 'selected' : ''}>Cardiologist</option>
+                <option value="Neurologist" ${doctor.sp === 'Neurologist' ? 'selected' : ''}>Neurologist</option>
+                <option value="Orthopedic" ${doctor.sp === 'Orthopedic' ? 'selected' : ''}>Orthopedic</option>
+                <option value="Pediatrician" ${doctor.sp === 'Pediatrician' ? 'selected' : ''}>Pediatrician</option>
+                <option value="Dermatologist" ${doctor.sp === 'Dermatologist' ? 'selected' : ''}>Dermatologist</option>
+                <option value="ENT Specialist" ${doctor.sp === 'ENT Specialist' ? 'selected' : ''}>ENT Specialist</option>
+                <option value="Gynecologist" ${doctor.sp === 'Gynecologist' ? 'selected' : ''}>Gynecologist</option>
+                <option value="Psychiatrist" ${doctor.sp === 'Psychiatrist' ? 'selected' : ''}>Psychiatrist</option>
+            </select>
+            <select id="sh1" required>
+                <option value="Diabetes" ${doctor.sh === 'Diabetes' ? 'selected' : ''}>Diabetes</option>
+                <option value="Hypertension" ${doctor.sh === 'Hypertension' ? 'selected' : ''}>Hypertension</option>
+                <option value="Heart Disease" ${doctor.sh === 'Heart Disease' ? 'selected' : ''}>Heart Disease</option>
+                <option value="Asthma" ${doctor.sh === 'Asthma' ? 'selected' : ''}>Asthma</option>
+                <option value="Cancer" ${doctor.sh === 'Cancer' ? 'selected' : ''}>Cancer</option>
+                <option value="Arthritis" ${doctor.sh === 'Arthritis' ? 'selected' : ''}>Arthritis</option>
+                <option value="Stroke" ${doctor.sh === 'Stroke' ? 'selected' : ''}>Stroke</option>
+                <option value="Chronic Kidney Disease" ${doctor.sh === 'Chronic Kidney Disease' ? 'selected' : ''}>Chronic Kidney Disease</option>
+            </select>
+            <button class="btn" onclick="finalupdate(${doctor.id})">Update</button>
+        `;
+    } catch (error) {
+        console.error("Error fetching data for update:", error);
+        alert("Error fetching data for update: " + error.message);
+    }
+}
+
+async function finalupdate(id) {
+    const updatedDoctor = {
+        id: document.getElementById('id1').value,
+        pt_name: document.getElementById('name1').value,
+        ad: document.getElementById('ad1').value,
+        time: document.getElementById('time1').value,
+        sp: document.getElementById('sp1').value,
+        sh: document.getElementById('sh1').value
+    };
+
+    try {
+        const res = await fetch(`http://localhost:3000/Doctor/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updatedDoctor)
+        });
+
+        if (res.ok) {
+            alert("Updated successfully");
+            fet(); // Refresh the data
+        } else {
+            const errorMessage = await res.text();
+            throw new Error(errorMessage || "Failed to update data");
+        }
+    } catch (error) {
+        console.error("Error updating data:", error);
+        alert("Error updating data: " + error.message);
+    }
+}
+
+    </script>
+
+</body>
+
+</html>
